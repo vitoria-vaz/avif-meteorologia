@@ -14,6 +14,13 @@ class WeatherRepositoryImpl @Inject constructor(
 ) : WeatherRepository {
     override suspend fun getWeatherData(lat: Float, lng: Float): WeatherInfo {
         val response = remoteDataSource.getWeatherDataResponse(lat, lng)
+        
+        // Check if response is valid
+        if (response.cod != 200 || response.weather.isEmpty() || response.main == null) {
+            val errorMessage = response.message ?: "Unknown error"
+            throw Exception("API Error: $errorMessage (Code: ${response.cod})")
+        }
+        
         val weather = response.weather[0]
 
         return WeatherInfo(

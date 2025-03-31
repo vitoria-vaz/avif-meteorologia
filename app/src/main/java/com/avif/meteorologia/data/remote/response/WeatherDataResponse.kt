@@ -5,20 +5,21 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class WeatherDataResponse(
-    val coord: Coord,
-    val weather: List<Weather>,
-    val base: String,
-    val main: Main,
-    val visibility: Int,
-    val wind: Wind,
+    val coord: Coord? = null,
+    val weather: List<Weather> = emptyList(),
+    val base: String? = null,
+    val main: Main? = null,
+    val visibility: Int? = null,
+    val wind: Wind? = null,
     val rain: Rain? = null,
-    val clouds: Clouds,
-    val dt: Long,
+    val clouds: Clouds? = null,
+    val dt: Long? = null,
     val sys: Sys? = null,
-    val timezone: Int,
-    val id: Long,
-    val name: String,
-    val cod: Int
+    val timezone: Int? = null,
+    val id: Long? = null,
+    val name: String = "",
+    val cod: Int = 200,
+    val message: String? = null
 )
 
 @Serializable
