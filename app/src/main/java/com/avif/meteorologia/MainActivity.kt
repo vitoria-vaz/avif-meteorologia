@@ -9,8 +9,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
-import com.avif.meteorologia.ui.WeatherScreen
 import com.avif.meteorologia.ui.WeatherViewModel
+import com.avif.meteorologia.ui.screen.WeatherScreen
 import com.avif.meteorologia.ui.theme.MeteorologiaTheme
 import dagger.hilt.android.AndroidEntryPoint
 

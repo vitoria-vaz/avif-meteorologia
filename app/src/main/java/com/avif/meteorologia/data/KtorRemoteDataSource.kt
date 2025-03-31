@@ -16,7 +16,7 @@ class KtorRemoteDataSource @Inject constructor(
         // Use a sample API key. In a real app, you would use BuildConfig or a secrets manager
         private const val BASE_URL = "https://api.openweathermap.org/data/2.5"
         // Sign up for a free key at https://openweathermap.org/api
-        private const val API_KEY = "85a9b2e9a6aebd7067cb6cb7fd35add9" // New API key
+        private const val API_KEY = "2d1f3afcd57e858c93ded3adebcbebfa" // Updated API key
     }
 
     override suspend fun getWeatherDataResponse(lat: Float, lng: Float): WeatherDataResponse {
