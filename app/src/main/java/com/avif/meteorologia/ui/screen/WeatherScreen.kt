@@ -53,6 +53,8 @@ import com.avif.meteorologia.ui.theme.White
 fun WeatherScreen(viewModel: WeatherViewModel) {
     val weatherState by viewModel.weatherState.collectAsState()
     val currentCity by viewModel.currentCity.collectAsState()
+    val isUpdatingLocation by viewModel.isUpdatingLocation.collectAsState()
+    val isUsingGPS by viewModel.isUsingGPS.collectAsState()
     
     // State for search dialog
     var showSearchDialog by remember { mutableStateOf(false) }
@@ -128,6 +130,8 @@ fun WeatherScreen(viewModel: WeatherViewModel) {
                 ) {
                     ActionBar(
                         locationName = currentCity,
+                        isUpdatingLocation = isUpdatingLocation,
+                        isUsingGPS = isUsingGPS,
                         onLocationClick = { showSearchDialog = true }
                     )
                     Spacer(

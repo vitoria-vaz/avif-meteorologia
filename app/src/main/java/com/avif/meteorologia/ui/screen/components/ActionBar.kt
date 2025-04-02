@@ -33,6 +33,8 @@ import com.avif.meteorologia.ui.theme.ColorTextSecondary
 fun ActionBar(
     modifier: Modifier = Modifier,
     locationName: String = "Unknown",
+    isUpdatingLocation: Boolean = false,
+    isUsingGPS: Boolean = false,
     onLocationClick: () -> Unit
 ) {
     Row(
@@ -43,6 +45,8 @@ fun ActionBar(
         LocationInfo(
             modifier = Modifier.padding(vertical = 10.dp),
             location = locationName,
+            isUpdatingLocation = isUpdatingLocation,
+            isUsingGPS = isUsingGPS,
             onLocationClick = onLocationClick
         )
     }
@@ -52,6 +56,8 @@ fun ActionBar(
 private fun LocationInfo(
     modifier: Modifier = Modifier,
     location: String,
+    isUpdatingLocation: Boolean = false,
+    isUsingGPS: Boolean = false,
     onLocationClick: () -> Unit
 ) {
     Column(
@@ -62,7 +68,9 @@ private fun LocationInfo(
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center,
-            modifier = Modifier.clickable { onLocationClick() }
+            modifier = Modifier
+                .clickable { onLocationClick() }
+                .padding(8.dp)
         ) {
             Text(
                 text = location,
@@ -79,13 +87,15 @@ private fun LocationInfo(
             )
         }
         
-        ProgressBar()
+        ProgressBar(isUpdatingLocation = isUpdatingLocation, isUsingGPS = isUsingGPS)
     }
 }
 
 @Composable
 private fun ProgressBar(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isUpdatingLocation: Boolean = false,
+    isUsingGPS: Boolean = false
 ) {
     Box(
         modifier = modifier
@@ -102,7 +112,11 @@ private fun ProgressBar(
             )
     ) {
         Text(
-            text = "Updating...",
+            text = when {
+                isUpdatingLocation -> "Getting location..."
+                isUsingGPS -> "Using GPS location"
+                else -> "Updating..."
+            },
             style = MaterialTheme.typography.labelSmall,
             color = ColorTextSecondary.copy(alpha = 0.7f)
         )
