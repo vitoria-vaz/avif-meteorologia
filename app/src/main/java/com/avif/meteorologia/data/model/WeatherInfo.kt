@@ -7,4 +7,8 @@ data class WeatherInfo(
     val temperature: Int,
     val dayOfWeek: String,
     val isDay: Boolean,
-)
+) {
+    override fun toString(): String {
+        return "WeatherInfo(location='$locationName', condition='$condition', temperature=$temperature°C)"
+    }
+}

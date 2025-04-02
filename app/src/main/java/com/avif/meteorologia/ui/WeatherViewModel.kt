@@ -1,5 +1,6 @@
 package com.avif.meteorologia.ui
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.avif.meteorologia.data.model.WeatherInfo
@@ -22,16 +23,15 @@ import javax.inject.Inject
 class WeatherViewModel @Inject constructor(
     private val weatherRepository: WeatherRepository
 ) : ViewModel() {
-
-    // Default coordinates for São Paulo, Brazil (used as fallback)
-    private val defaultLat = -23.5489f
-    private val defaultLng = -46.6388f
+    companion object {
+        private const val TAG = "WeatherViewModel"
+    }
     
     // Track if we're using GPS location or default
     private val _isUsingGPS = MutableStateFlow(false)
     val isUsingGPS: StateFlow<Boolean> = _isUsingGPS.asStateFlow()
     
-    private val _currentCity = MutableStateFlow("Loading location...")
+    private val _currentCity = MutableStateFlow("Waiting for location...")
     val currentCity: StateFlow<String> = _currentCity.asStateFlow()
 
     private val _weatherState = MutableStateFlow<WeatherState>(WeatherState.Loading)
@@ -44,37 +44,44 @@ class WeatherViewModel @Inject constructor(
     private val apiKey = "2d1f3afcd57e858c93ded3adebcbebfa" // Use the same API key
 
     init {
-        // We'll wait for GPS coordinates from MainActivity
-        // If none arrive within a timeout, we'll use default
-        viewModelScope.launch {
-            // Wait 3 seconds for GPS, then use default if no GPS data received
-            kotlinx.coroutines.delay(3000)
-            if (_weatherState.value is WeatherState.Loading) {
-                _isUsingGPS.value = false
-                fetchWeatherData(defaultLat, defaultLng)
-            }
-        }
+        // We now rely only on GPS coordinates from MainActivity
+        // The UI will stay in loading state until location is received
+        Log.d(TAG, "ViewModel initialized - waiting for GPS data")
     }
 
     // Called from MainActivity when GPS coordinates are available
     fun fetchWeatherFromGPS(lat: Float, lng: Float) {
+        Log.d(TAG, "Fetching weather from GPS: lat=$lat, lng=$lng")
         _isUsingGPS.value = true
         fetchWeatherData(lat, lng)
     }
 
-    fun fetchWeatherData(lat: Float = defaultLat, lng: Float = defaultLng) {
+    fun fetchWeatherData(lat: Float, lng: Float) {
         viewModelScope.launch {
+            Log.d(TAG, "fetchWeatherData called with lat=$lat, lng=$lng")
             _weatherState.value = WeatherState.Loading
             try {
                 // Mark that we're updating location
                 _isUpdatingLocation.value = true
                 
-                // Update city name based on coordinates if it's not a manual search
+                // Pre-fetch the location name to show something immediately
                 updateLocationName(lat, lng)
                 
+                Log.d(TAG, "Calling weather repository for lat=$lat, lng=$lng")
                 val weatherInfo = weatherRepository.getWeatherData(lat, lng)
+                
+                // Update the city name with the one from the weather API response
+                if (weatherInfo.locationName != "Unknown location" && weatherInfo.locationName.isNotEmpty()) {
+                    Log.d(TAG, "Updating city name from weather API: ${weatherInfo.locationName}")
+                    _currentCity.value = weatherInfo.locationName
+                } else {
+                    Log.d(TAG, "Weather API didn't return a valid city name, keeping current: ${_currentCity.value}")
+                }
+                
+                Log.d(TAG, "Weather data received: ${weatherInfo.locationName}, temp: ${weatherInfo.temperature}")
                 _weatherState.value = WeatherState.Success(weatherInfo)
             } catch (e: Exception) {
+                Log.e(TAG, "Error fetching weather data", e)
                 _weatherState.value = WeatherState.Error(e.message ?: "Unknown error")
             } finally {
                 // Done updating location
@@ -85,30 +92,43 @@ class WeatherViewModel @Inject constructor(
     
     // Get city name from coordinates using reverse geocoding
     private suspend fun updateLocationName(lat: Float, lng: Float) {
+        // Skip the additional API call for city name if this is from a manual search
+        // The weather API will already provide the city name and we'll use that instead
+        // This is just for getting an initial city name before the weather API responds
+        if (!_isUsingGPS.value && _currentCity.value != "Waiting for location...") {
+            Log.d(TAG, "Skipping location name update for manual city selection")
+            return
+        }
+        
         try {
+            Log.d(TAG, "Updating location name for lat=$lat, lng=$lng")
             val url = URL("https://api.openweathermap.org/geo/1.0/reverse?lat=$lat&lon=$lng&limit=1&appid=$apiKey")
             
             val connection = url.openConnection() as HttpURLConnection
             connection.requestMethod = "GET"
+            connection.connectTimeout = 10000 // 10 seconds timeout
+            connection.readTimeout = 10000
             
             val response = connection.inputStream.bufferedReader().use { it.readText() }
+            Log.d(TAG, "Geocoding response: $response")
             val jsonArray = JSONArray(response)
             
             if (jsonArray.length() > 0) {
                 val cityJson = jsonArray.getJSONObject(0)
                 val cityName = cityJson.getString("name")
+                Log.d(TAG, "Found city name: $cityName")
                 _currentCity.value = cityName
+            } else {
+                Log.d(TAG, "No city found in geocoding response")
             }
         } catch (e: Exception) {
-            // If reverse geocoding fails, set to a default city name
-            if (_currentCity.value == "Loading location...") {
-                _currentCity.value = "São Paulo"
-            }
+            Log.e(TAG, "Error updating location name", e)
         }
     }
     
     // Update current city and fetch weather
     fun updateCity(city: CitySearchResult) {
+        Log.d(TAG, "Manually updating city: ${city.name}, lat=${city.lat}, lon=${city.lon}")
         _isUsingGPS.value = false
         _currentCity.value = city.name
         fetchWeatherData(city.lat, city.lon)
@@ -117,13 +137,17 @@ class WeatherViewModel @Inject constructor(
     // Search for cities using OpenWeatherMap Geocoding API
     suspend fun searchCities(query: String): List<CitySearchResult> {
         return try {
+            Log.d(TAG, "Searching for cities with query: $query")
             val encodedQuery = URLEncoder.encode(query, StandardCharsets.UTF_8.toString())
             val url = URL("https://api.openweathermap.org/geo/1.0/direct?q=$encodedQuery&limit=5&appid=$apiKey")
             
             val connection = url.openConnection() as HttpURLConnection
             connection.requestMethod = "GET"
+            connection.connectTimeout = 10000 // 10 seconds timeout
+            connection.readTimeout = 10000
             
             val response = connection.inputStream.bufferedReader().use { it.readText() }
+            Log.d(TAG, "City search response: $response")
             val jsonArray = JSONArray(response)
             
             val cities = mutableListOf<CitySearchResult>()
@@ -140,8 +164,10 @@ class WeatherViewModel @Inject constructor(
                 )
             }
             
+            Log.d(TAG, "Found ${cities.size} cities")
             cities
         } catch (e: Exception) {
+            Log.e(TAG, "Error searching for cities", e)
             emptyList()
         }
     }

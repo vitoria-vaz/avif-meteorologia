@@ -87,10 +87,20 @@ fun WeatherScreen(viewModel: WeatherViewModel) {
                     CircularProgressIndicator(color = ColorLightBlue)  // Use theme color
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        text = "Loading weather data...",
+                        text = if (isUpdatingLocation) "Getting your location..." else "Loading weather data...",
                         color = ColorText,  // Use theme color
                         textAlign = TextAlign.Center
                     )
+                    
+                    if (currentCity != "Waiting for location...") {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "For $currentCity",
+                            color = ColorTextSecondary,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                    
                     Spacer(modifier = Modifier.weight(0.6f))
                 }
             }
