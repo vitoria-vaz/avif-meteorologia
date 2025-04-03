@@ -12,6 +12,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Air
+import androidx.compose.material.icons.filled.Thermostat
+import androidx.compose.material.icons.filled.WaterDrop
+import androidx.compose.material.icons.rounded.Cloud
+import androidx.compose.material.icons.rounded.WbSunny
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -21,6 +27,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -63,24 +70,24 @@ fun DailyForecast(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     WeatherDetail(
-                        iconRes = R.drawable.ic_thunderstorm,
+                        icon = Icons.Filled.Thermostat,
                         title = "UV Index",
                         value = if (weatherInfo != null) "${weatherInfo.uvIndex}" else "0",
                         textColor = textColor
                     )
                     WeatherDetail(
-                        iconRes = R.drawable.ic_rainy,
+                        icon = Icons.Filled.WaterDrop,
                         title = "Rain Chance",
                         value = if (weatherInfo != null) "${weatherInfo.rainProbability}%" else "0%",
                         textColor = textColor
                     )
                     WeatherDetail(
-                        iconRes = R.drawable.ic_cloudy,
+                        icon = Icons.Filled.Air,
                         title = "Wind",
                         value = if (weatherInfo != null) {
                             // Convert m/s to km/h (1 m/s = 3.6 km/h)
-                            val windKmh = (weatherInfo.windSpeed * 3.6).toInt()
-                            "$windKmh km/h"
+                            val windKmh = (weatherInfo.windSpeed * 3.6)
+                            "%.1f km/h".format(windKmh)
                         } else "0 km/h",
                         textColor = textColor
                     )
@@ -172,7 +179,7 @@ private fun WeatherStatus(
 
 @Composable
 private fun WeatherDetail(
-    @androidx.annotation.DrawableRes iconRes: Int,
+    icon: ImageVector,
     title: String,
     value: String,
     textColor: Color
@@ -190,7 +197,7 @@ private fun WeatherDetail(
             contentAlignment = Alignment.Center
         ) {
             Icon(
-                painter = painterResource(id = iconRes),
+                imageVector = icon,
                 contentDescription = null,
                 tint = textColor.copy(alpha = 0.8f),
                 modifier = Modifier.size(20.dp)

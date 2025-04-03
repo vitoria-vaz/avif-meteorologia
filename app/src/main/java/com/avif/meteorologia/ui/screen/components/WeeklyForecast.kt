@@ -13,6 +13,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Cloud
+import androidx.compose.material.icons.rounded.WaterDrop
+import androidx.compose.material.icons.rounded.Thunderstorm
+import androidx.compose.material.icons.rounded.WbSunny
+import androidx.compose.material.icons.rounded.AcUnit
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -21,10 +28,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.avif.meteorologia.R
 import com.avif.meteorologia.ui.screen.util.ForecastData
 import com.avif.meteorologia.ui.screen.util.ForecastItem
 
@@ -106,12 +115,13 @@ private fun ForecastItemView(
         
         Spacer(modifier = Modifier.height(12.dp))
         
-        // Weather icon
-        Image(
-            painter = painterResource(id = item.image),
+        // Weather icon - now using Material Symbols
+        val weatherIcon = getWeatherIcon(item.image)
+        Icon(
+            imageVector = weatherIcon,
             contentDescription = null,
-            modifier = Modifier.size(32.dp),
-            contentScale = ContentScale.Fit
+            tint = textColor.copy(alpha = 0.8f),
+            modifier = Modifier.size(32.dp)
         )
         
         Spacer(modifier = Modifier.height(12.dp))
@@ -135,5 +145,20 @@ private fun ForecastItemView(
                 color = textColor.copy(alpha = 0.7f)
             )
         }
+    }
+}
+
+/**
+ * Maps drawable resource IDs to appropriate Material Icons
+ */
+@Composable
+private fun getWeatherIcon(iconRes: Int): ImageVector {
+    return when (iconRes) {
+        R.drawable.ic_cloudy -> Icons.Rounded.Cloud
+        R.drawable.ic_rainy -> Icons.Rounded.WaterDrop
+        R.drawable.ic_thunderstorm -> Icons.Rounded.Thunderstorm
+        R.drawable.ic_clear_day, R.drawable.ic_clear_night -> Icons.Rounded.WbSunny
+        R.drawable.ic_snowy -> Icons.Rounded.AcUnit
+        else -> Icons.Rounded.Cloud // Default icon
     }
 } 

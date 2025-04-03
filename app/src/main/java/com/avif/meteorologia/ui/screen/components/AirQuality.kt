@@ -13,6 +13,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.WaterDrop
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.Thermostat
+import androidx.compose.material.icons.rounded.Cloud
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -21,6 +27,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -115,22 +122,26 @@ fun AirQuality(
                     AirQualityItem(
                         title = "Humidity",
                         value = if (weatherInfo != null) "${weatherInfo.humidity}%" else "0%",
-                        iconRes = R.drawable.ic_rainy
+                        icon = Icons.Filled.WaterDrop,
+                        textColor = textColor
                     )
                     AirQualityItem(
                         title = "Visibility",
                         value = if (weatherInfo != null) "${weatherInfo.visibility / 1000} km" else "0 km",
-                        iconRes = R.drawable.ic_foggy
+                        icon = Icons.Filled.Visibility,
+                        textColor = textColor
                     )
                     AirQualityItem(
                         title = "Pressure",
                         value = if (weatherInfo != null) "${weatherInfo.pressure} hPa" else "0 hPa",
-                        iconRes = R.drawable.ic_cloudy
+                        icon = Icons.Rounded.Cloud,
+                        textColor = textColor
                     )
                     AirQualityItem(
                         title = "Feels Like",
                         value = if (weatherInfo != null) "${weatherInfo.feelsLike.toInt()}°" else "0°",
-                        iconRes = R.drawable.ic_clear_day
+                        icon = Icons.Filled.Thermostat,
+                        textColor = textColor
                     )
                 }
             }
@@ -142,7 +153,8 @@ fun AirQuality(
 private fun AirQualityItem(
     title: String,
     value: String,
-    iconRes: Int
+    icon: ImageVector,
+    textColor: Color
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally
@@ -163,9 +175,10 @@ private fun AirQualityItem(
                 ),
             contentAlignment = Alignment.Center
         ) {
-            Image(
-                painter = painterResource(id = iconRes),
+            Icon(
+                imageVector = icon,
                 contentDescription = null,
+                tint = textColor.copy(alpha = 0.8f),
                 modifier = Modifier.size(20.dp)
             )
         }
@@ -175,7 +188,7 @@ private fun AirQualityItem(
         Text(
             text = title,
             style = MaterialTheme.typography.bodySmall,
-            color = Color.Black.copy(alpha = 0.7f)
+            color = textColor.copy(alpha = 0.7f)
         )
         
         Spacer(modifier = Modifier.height(4.dp))
@@ -183,7 +196,7 @@ private fun AirQualityItem(
         Text(
             text = value,
             style = MaterialTheme.typography.bodyLarge,
-            color = Color.Black,
+            color = textColor,
             fontWeight = FontWeight.Bold
         )
     }
