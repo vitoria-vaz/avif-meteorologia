@@ -14,7 +14,7 @@ android {
     defaultConfig {
         applicationId = "com.avif.meteorologia"
         minSdk = 24
-        1targetSdk = 36
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0"
 
