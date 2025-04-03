@@ -23,53 +23,22 @@ data class WeatherDataResponse(
 )
 
 @Serializable
-data class Coord(
-    val lon: Double,
-    val lat: Double
-)
-
-@Serializable
-data class Weather(
-    val id: Int,
-    val main: String,
-    val description: String,
-    val icon: String
-)
-
-@Serializable
 data class Main(
-    val temp: Double,
-    @SerialName("feels_like") val feelsLike: Double,
-    @SerialName("temp_min") val tempMin: Double,
-    @SerialName("temp_max") val tempMax: Double,
-    val pressure: Int,
-    val humidity: Int,
+    val temp: Double = 0.0,
+    @SerialName("feels_like") val feelsLike: Double = 0.0,
+    @SerialName("temp_min") val tempMin: Double = 0.0,
+    @SerialName("temp_max") val tempMax: Double = 0.0,
+    val pressure: Int = 1013,
+    val humidity: Int = 0,
     @SerialName("sea_level") val seaLevel: Int? = null,
     @SerialName("grnd_level") val groundLevel: Int? = null
-)
-
-@Serializable
-data class Wind(
-    val speed: Double,
-    val deg: Int,
-    val gust: Double? = null
-)
-
-@Serializable
-data class Rain(
-    @SerialName("1h") val oneHour: Double
-)
-
-@Serializable
-data class Clouds(
-    val all: Int
 )
 
 @Serializable
 data class Sys(
     val type: Int? = null,
     val id: Int? = null,
-    val country: String,
-    val sunrise: Long,
-    val sunset: Long
+    val country: String = "",
+    val sunrise: Long = 0,
+    val sunset: Long = 0
 )

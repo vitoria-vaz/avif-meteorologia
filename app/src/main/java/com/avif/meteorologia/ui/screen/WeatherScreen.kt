@@ -60,6 +60,7 @@ fun WeatherScreen(viewModel: WeatherViewModel) {
   val isUpdatingLocation by viewModel.isUpdatingLocation.collectAsState()
   val isUsingGPS by viewModel.isUsingGPS.collectAsState()
   val isRefreshing by viewModel.isRefreshing.collectAsState()
+  val forecastData by viewModel.forecastData.collectAsState()
 
   // State for search dialog
   var showSearchDialog by remember { mutableStateOf(false) }
@@ -179,7 +180,7 @@ fun WeatherScreen(viewModel: WeatherViewModel) {
           CustomPullToRefresh(
             isRefreshing = isRefreshing,
             onRefresh = { 
-              val success = viewModel.refreshWeatherData()
+              val success = viewModel.refreshWeatherWithLocation()
               if (!success) {
                 refreshError = "Unable to refresh. No location data."
               }
@@ -217,7 +218,9 @@ fun WeatherScreen(viewModel: WeatherViewModel) {
               Spacer(modifier = Modifier.height(16.dp))
 
               // Weekly forecast component
-              WeeklyForecast()
+              WeeklyForecast(
+                forecastData = forecastData
+              )
 
               Spacer(modifier = Modifier.height(24.dp))
             }

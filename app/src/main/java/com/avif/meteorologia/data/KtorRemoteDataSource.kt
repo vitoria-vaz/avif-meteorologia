@@ -2,6 +2,7 @@ package com.avif.meteorologia.data
 
 import android.util.Log
 import com.avif.meteorologia.data.remote.RemoteDataSource
+import com.avif.meteorologia.data.remote.response.ForecastResponse
 import com.avif.meteorologia.data.remote.response.WeatherDataResponse
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -56,6 +57,46 @@ class KtorRemoteDataSource @Inject constructor(
             return WeatherDataResponse(
                 cod = 500,
                 message = "Network error: ${e.message}"
+            )
+        }
+    }
+    
+    override suspend fun getForecastResponse(lat: Float, lng: Float): ForecastResponse {
+        try {
+            Log.d(TAG, "Fetching 5-day forecast for lat=$lat, lng=$lng")
+            // Using the 5-day/3-hour forecast endpoint
+            val response = httpClient
+                .get("${BASE_URL}/forecast?lat=$lat&lon=$lng&appid=$API_KEY&units=metric")
+                .body<ForecastResponse>()
+            Log.d(TAG, "Forecast response received: ${response.cod}, items: ${response.list.size}")
+            return response
+        } catch (e: ClientRequestException) {
+            // Handle HTTP errors
+            Log.e(TAG, "API error: ${e.response.status}", e)
+            try {
+                val errorBody = e.response.body<ForecastResponse>()
+                Log.e(TAG, "API error body: ${errorBody.message}")
+                return errorBody
+            } catch (e2: Exception) {
+                Log.e(TAG, "Failed to parse error response", e2)
+                return ForecastResponse(
+                    cod = e.response.status.value.toString(),
+                    message = e.response.status.value
+                )
+            }
+        } catch (e: JsonConvertException) {
+            // Handle JSON parsing errors
+            Log.e(TAG, "JSON parsing error", e)
+            return ForecastResponse(
+                cod = "500",
+                message = 500
+            )
+        } catch (e: Exception) {
+            // Handle other exceptions
+            Log.e(TAG, "Network error", e)
+            return ForecastResponse(
+                cod = "500", 
+                message = 500
             )
         }
     }

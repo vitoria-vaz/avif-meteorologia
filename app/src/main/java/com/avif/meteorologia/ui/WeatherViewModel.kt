@@ -3,9 +3,11 @@ package com.avif.meteorologia.ui
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.avif.meteorologia.data.location.LocationService
 import com.avif.meteorologia.data.model.WeatherInfo
 import com.avif.meteorologia.data.repository.WeatherRepository
 import com.avif.meteorologia.ui.screen.components.CitySearchResult
+import com.avif.meteorologia.ui.screen.util.ForecastItem
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -20,7 +22,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class WeatherViewModel @Inject constructor(
-    private val weatherRepository: WeatherRepository
+    private val weatherRepository: WeatherRepository,
+    private val locationService: LocationService
 ) : ViewModel() {
     companion object {
         private const val TAG = "WeatherViewModel"
@@ -43,6 +46,10 @@ class WeatherViewModel @Inject constructor(
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
     
+    // Add state for weekly forecast data
+    private val _forecastData = MutableStateFlow<List<ForecastItem>>(emptyList())
+    val forecastData: StateFlow<List<ForecastItem>> = _forecastData.asStateFlow()
+    
     // Add current coordinates for use in refresh
     private var currentLatitude: Float = 0f
     private var currentLongitude: Float = 0f
@@ -64,6 +71,7 @@ class WeatherViewModel @Inject constructor(
         currentLatitude = lat
         currentLongitude = lng
         fetchWeatherData(lat, lng)
+        fetchForecastData(lat, lng)
     }
 
     private fun fetchWeatherData(lat: Float, lng: Float) {
@@ -101,6 +109,20 @@ class WeatherViewModel @Inject constructor(
             } finally {
                 // Done updating location
                 _isUpdatingLocation.value = false
+            }
+        }
+    }
+    
+    private fun fetchForecastData(lat: Float, lng: Float) {
+        viewModelScope.launch {
+            Log.d(TAG, "Fetching forecast data for lat=$lat, lng=$lng")
+            try {
+                val forecast = weatherRepository.getForecastData(lat, lng)
+                _forecastData.value = forecast
+                Log.d(TAG, "Forecast data received: ${forecast.size} days")
+            } catch (e: Exception) {
+                Log.e(TAG, "Error fetching forecast data", e)
+                // Keep the current forecast data if there's an error
             }
         }
     }
@@ -150,6 +172,73 @@ class WeatherViewModel @Inject constructor(
         currentLatitude = city.lat
         currentLongitude = city.lon
         fetchWeatherData(city.lat, city.lon)
+        fetchForecastData(city.lat, city.lon)
+    }
+    
+    /**
+     * Refresh weather data with updated GPS location
+     * This will:
+     * 1. Get a fresh GPS location
+     * 2. Send it to the API
+     * 3. Update the UI with the new data
+     * 
+     * @return true if refresh was initiated, false if unable to refresh
+     */
+    fun refreshWeatherWithLocation(): Boolean {
+        // Only proceed if we're using GPS location
+        if (!_isUsingGPS.value) {
+            Log.d(TAG, "Not using GPS location, using regular refresh instead")
+            return refreshWeatherData()
+        }
+        
+        Log.d(TAG, "Starting refresh with updated GPS location")
+        _isRefreshing.value = true
+        
+        // Get fresh GPS coordinates
+        locationService.getCurrentLocation(
+            onSuccess = { location ->
+                val lat = location.latitude.toFloat()
+                val lng = location.longitude.toFloat()
+                Log.d(TAG, "Fresh location obtained: lat=$lat, lng=$lng")
+                
+                // Update stored coordinates
+                currentLatitude = lat
+                currentLongitude = lng
+                
+                // Fetch weather with new coordinates
+                viewModelScope.launch {
+                    try {
+                        val weatherInfo = weatherRepository.getWeatherData(lat, lng)
+                        _weatherState.value = WeatherState.Success(weatherInfo)
+                        
+                        // Update city name if needed
+                        if (weatherInfo.locationName != "Unknown location" && weatherInfo.locationName.isNotEmpty()) {
+                            _currentCity.value = weatherInfo.locationName
+                        } else {
+                            // Try to update location name separately
+                            updateLocationName(lat, lng)
+                        }
+                        
+                        // Fetch updated forecast data
+                        fetchForecastData(lat, lng)
+                        
+                        Log.d(TAG, "Location-based refresh completed successfully")
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error during location-based refresh", e)
+                        // Don't update state to Error to keep displaying old data
+                    } finally {
+                        _isRefreshing.value = false
+                    }
+                }
+            },
+            onError = { error ->
+                Log.e(TAG, "Error getting fresh location: ${error.message}", error)
+                // Fall back to using the last known coordinates
+                refreshWeatherData()
+            }
+        )
+        
+        return true
     }
     
     /**
@@ -184,6 +273,9 @@ class WeatherViewModel @Inject constructor(
                 if (weatherInfo.locationName != "Unknown location" && weatherInfo.locationName.isNotEmpty()) {
                     _currentCity.value = weatherInfo.locationName
                 }
+                
+                // Fetch updated forecast data
+                fetchForecastData(currentLatitude, currentLongitude)
                 
                 Log.d(TAG, "Refresh completed successfully")
             } catch (e: Exception) {

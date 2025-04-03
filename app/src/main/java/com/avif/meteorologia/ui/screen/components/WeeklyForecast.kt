@@ -41,7 +41,8 @@ import com.avif.meteorologia.ui.theme.ColorTextSecondary
 
 @Composable
 fun WeeklyForecast(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    forecastData: List<ForecastItem> = ForecastData // Use API data if provided, otherwise fall back to static data
 ) {
     // Create a gradient brush for the card background
     val cardGradientBrush = Brush.verticalGradient(
@@ -78,7 +79,7 @@ fun WeeklyForecast(
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    items(ForecastData) { item ->
+                    items(forecastData) { item ->
                         ForecastItemView(item = item)
                     }
                 }

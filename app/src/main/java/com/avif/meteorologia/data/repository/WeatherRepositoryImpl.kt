@@ -2,11 +2,16 @@ package com.avif.meteorologia.data.repository
 
 import android.icu.util.LocaleData
 import android.util.Log
+import com.avif.meteorologia.R
 import com.avif.meteorologia.data.model.WeatherInfo
 import com.avif.meteorologia.data.remote.RemoteDataSource
+import com.avif.meteorologia.ui.screen.util.ForecastItem
 import java.net.HttpURLConnection
 import java.net.URL
+import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.Locale
 import javax.inject.Inject
@@ -80,6 +85,80 @@ class WeatherRepositoryImpl @Inject constructor(
         
         Log.d(TAG, "Created WeatherInfo: $weatherInfo")
         return weatherInfo
+    }
+    
+    override suspend fun getForecastData(lat: Float, lng: Float): List<ForecastItem> {
+        Log.d(TAG, "Getting forecast data for lat=$lat, lng=$lng")
+        val response = remoteDataSource.getForecastResponse(lat, lng)
+        
+        // Check if response is valid
+        if (response.cod != "200" || response.list.isEmpty()) {
+            Log.e(TAG, "API Error: ${response.message} (Code: ${response.cod})")
+            return emptyList()
+        }
+        
+        // Group forecast data by day to get daily min/max temperatures
+        val dailyForecasts = response.list.groupBy { 
+            // Extract the date part from the timestamp
+            val instant = Instant.ofEpochSecond(it.dt)
+            val date = instant.atZone(ZoneId.systemDefault()).toLocalDate()
+            date
+        }
+        
+        // Get daily min and max temperatures from grouped data
+        val dateFormatter = DateTimeFormatter.ofPattern("dd MMM")
+        val forecastItems = mutableListOf<ForecastItem>()
+        
+        // Take first 7 days
+        dailyForecasts.entries.take(7).forEach { (date, forecasts) ->
+            // Get daily min and max temperatures from all forecasts for the day
+            val maxTemp = forecasts.maxOfOrNull { it.main.tempMax }?.roundToInt() ?: 0
+            val minTemp = forecasts.minOfOrNull { it.main.tempMin }?.roundToInt() ?: 0
+            
+            // Get the most common weather condition for the day
+            val weatherConditions = forecasts.flatMap { it.weather }
+            val mostCommonWeather = weatherConditions.groupBy { it.id }
+                .maxByOrNull { it.value.size }
+                ?.value?.first()
+            
+            val weatherIcon = getWeatherIcon(mostCommonWeather?.id ?: 800, true)
+            
+            forecastItems.add(
+                ForecastItem(
+                    image = weatherIcon,
+                    dayOfWeek = date.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault()),
+                    date = date.format(dateFormatter),
+                    minTemperature = "${minTemp}°",
+                    maxTemperature = "${maxTemp}°",
+                    isSelected = date == LocalDate.now().plusDays(1) // Select tomorrow by default
+                )
+            )
+        }
+        
+        Log.d(TAG, "Created ${forecastItems.size} forecast items")
+        return forecastItems
+    }
+    
+    // Helper function to map OpenWeatherMap condition IDs to app icons
+    private fun getWeatherIcon(weatherId: Int, isDay: Boolean): Int {
+        return when {
+            // Clear sky
+            weatherId == 800 -> if (isDay) R.drawable.ic_clear_day else R.drawable.ic_clear_night
+            // Few clouds, scattered clouds
+            weatherId in 801..802 -> if (isDay) R.drawable.img_cloudy else R.drawable.ic_cloudy_night
+            // Broken clouds, overcast
+            weatherId in 803..804 -> R.drawable.ic_cloudy
+            // Shower rain, rain
+            weatherId in 300..531 -> R.drawable.ic_rainy
+            // Thunderstorm
+            weatherId in 200..232 -> R.drawable.ic_thunderstorm
+            // Snow
+            weatherId in 600..622 -> R.drawable.ic_snowy
+            // Mist, fog, etc.
+            weatherId in 700..781 -> R.drawable.ic_foggy
+            // Default
+            else -> if (isDay) R.drawable.ic_clear_day else R.drawable.ic_clear_night
+        }
     }
     
     // Helper method to get city name from coordinates when the weather API doesn't provide it
