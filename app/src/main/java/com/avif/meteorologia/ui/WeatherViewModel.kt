@@ -12,7 +12,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.json.JSONArray
-import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
@@ -40,6 +39,14 @@ class WeatherViewModel @Inject constructor(
     private val _isUpdatingLocation = MutableStateFlow(false)
     val isUpdatingLocation: StateFlow<Boolean> = _isUpdatingLocation.asStateFlow()
     
+    // Add a new state for tracking refresh operation
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
+    
+    // Add current coordinates for use in refresh
+    private var currentLatitude: Float = 0f
+    private var currentLongitude: Float = 0f
+    
     // API key for OpenWeatherMap Geocoding API
     private val apiKey = "2d1f3afcd57e858c93ded3adebcbebfa" // Use the same API key
 
@@ -53,13 +60,21 @@ class WeatherViewModel @Inject constructor(
     fun fetchWeatherFromGPS(lat: Float, lng: Float) {
         Log.d(TAG, "Fetching weather from GPS: lat=$lat, lng=$lng")
         _isUsingGPS.value = true
+        // Store current coordinates for refresh operations
+        currentLatitude = lat
+        currentLongitude = lng
         fetchWeatherData(lat, lng)
     }
 
-    fun fetchWeatherData(lat: Float, lng: Float) {
+    private fun fetchWeatherData(lat: Float, lng: Float) {
         viewModelScope.launch {
             Log.d(TAG, "fetchWeatherData called with lat=$lat, lng=$lng")
             _weatherState.value = WeatherState.Loading
+            
+            // Store current coordinates for refresh operations
+            currentLatitude = lat
+            currentLongitude = lng
+            
             try {
                 // Mark that we're updating location
                 _isUpdatingLocation.value = true
@@ -91,7 +106,7 @@ class WeatherViewModel @Inject constructor(
     }
     
     // Get city name from coordinates using reverse geocoding
-    private suspend fun updateLocationName(lat: Float, lng: Float) {
+    private fun updateLocationName(lat: Float, lng: Float) {
         // Skip the additional API call for city name if this is from a manual search
         // The weather API will already provide the city name and we'll use that instead
         // This is just for getting an initial city name before the weather API responds
@@ -131,11 +146,60 @@ class WeatherViewModel @Inject constructor(
         Log.d(TAG, "Manually updating city: ${city.name}, lat=${city.lat}, lon=${city.lon}")
         _isUsingGPS.value = false
         _currentCity.value = city.name
+        // Store coordinates for refresh
+        currentLatitude = city.lat
+        currentLongitude = city.lon
         fetchWeatherData(city.lat, city.lon)
     }
     
+    /**
+     * Refresh weather data using the last known coordinates
+     * This method can be called from multiple places:
+     * - Pull-to-refresh gesture
+     * - Periodic refresh timer
+     * - Manual refresh button
+     * - After returning to the app from background
+     * 
+     * @return true if refresh was initiated, false if unable to refresh (no coordinates)
+     */
+    fun refreshWeatherData(): Boolean {
+        // Check if we have valid coordinates to refresh
+        if (currentLatitude == 0f && currentLongitude == 0f) {
+            Log.w(TAG, "Cannot refresh: No coordinates available")
+            return false
+        }
+        
+        Log.d(TAG, "Refreshing weather data with lat=$currentLatitude, lng=$currentLongitude")
+        _isRefreshing.value = true
+        
+        viewModelScope.launch {
+            try {
+                // Fetch fresh data using last known coordinates
+                val weatherInfo = weatherRepository.getWeatherData(currentLatitude, currentLongitude)
+                
+                // Update UI state with new data
+                _weatherState.value = WeatherState.Success(weatherInfo)
+                
+                // Update city name if needed
+                if (weatherInfo.locationName != "Unknown location" && weatherInfo.locationName.isNotEmpty()) {
+                    _currentCity.value = weatherInfo.locationName
+                }
+                
+                Log.d(TAG, "Refresh completed successfully")
+            } catch (e: Exception) {
+                Log.e(TAG, "Error refreshing weather data", e)
+                // Don't update state to Error on refresh failure to keep displaying old data
+                // Just show a message if needed (handled by the UI)
+            } finally {
+                _isRefreshing.value = false
+            }
+        }
+        
+        return true
+    }
+    
     // Search for cities using OpenWeatherMap Geocoding API
-    suspend fun searchCities(query: String): List<CitySearchResult> {
+    fun searchCities(query: String): List<CitySearchResult> {
         return try {
             Log.d(TAG, "Searching for cities with query: $query")
             val encodedQuery = URLEncoder.encode(query, StandardCharsets.UTF_8.toString())

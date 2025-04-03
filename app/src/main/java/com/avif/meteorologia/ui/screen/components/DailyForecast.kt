@@ -77,17 +77,21 @@ fun DailyForecast(
                     WeatherDetail(
                         iconRes = R.drawable.ic_thunderstorm,
                         title = "UV Index",
-                        value = "2"
+                        value = if (weatherInfo != null) "${weatherInfo.uvIndex}" else "0"
                     )
                     WeatherDetail(
                         iconRes = R.drawable.ic_rainy,
                         title = "Rain Chance",
-                        value = "2%"
+                        value = if (weatherInfo != null) "${weatherInfo.rainProbability}%" else "0%"
                     )
                     WeatherDetail(
                         iconRes = R.drawable.ic_cloudy,
                         title = "Wind",
-                        value = "18 km/h"
+                        value = if (weatherInfo != null) {
+                            // Convert m/s to km/h (1 m/s = 3.6 km/h)
+                            val windKmh = (weatherInfo.windSpeed * 3.6).toInt()
+                            "$windKmh km/h"
+                        } else "0 km/h"
                     )
                 }
             }

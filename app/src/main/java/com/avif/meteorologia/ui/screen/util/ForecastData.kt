@@ -2,6 +2,11 @@ package com.avif.meteorologia.ui.screen.util
 
 import androidx.annotation.DrawableRes
 import com.avif.meteorologia.R
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.time.format.TextStyle
+import java.util.Locale
+import kotlin.random.Random
 
 data class ForecastItem(
     @DrawableRes val image: Int,
@@ -13,63 +18,55 @@ data class ForecastItem(
     val isSelected: Boolean = false
 )
 
-// Sample data that will be replaced with real data
-val ForecastData = listOf(
-    ForecastItem(
-        image = R.drawable.img_cloudy,
-        dayOfWeek = "Mon",
-        date = "13 Feb",
-        temperature = "26°",
-        airQuality = "194",
-        airQualityIndicatorColorHex = "#ff7676"
-    ),
-    ForecastItem(
-        image = R.drawable.img_cloudy,
-        dayOfWeek = "Tue",
-        date = "14 Feb",
-        temperature = "18°",
-        airQuality = "160",
-        airQualityIndicatorColorHex = "#ff7676",
-        isSelected = true
-    ),
-    ForecastItem(
-        image = R.drawable.img_cloudy,
-        dayOfWeek = "Wed",
-        date = "15 Feb",
-        temperature = "16°",
-        airQuality = "40",
-        airQualityIndicatorColorHex = "#2dbe8d"
-    ),
-    ForecastItem(
-        image = R.drawable.img_cloudy,
-        dayOfWeek = "Thu",
-        date = "16 Feb",
-        temperature = "20°",
-        airQuality = "58",
-        airQualityIndicatorColorHex = "#f9cf5f"
-    ),
-    ForecastItem(
-        image = R.drawable.img_cloudy,
-        dayOfWeek = "Fri",
-        date = "17 Feb",
-        temperature = "34°",
-        airQuality = "121",
-        airQualityIndicatorColorHex = "#ff7676"
-    ),
-    ForecastItem(
-        image = R.drawable.img_cloudy,
-        dayOfWeek = "Sat",
-        date = "18 Feb",
-        temperature = "28°",
-        airQuality = "73",
-        airQualityIndicatorColorHex = "#f9cf5f"
-    ),
-    ForecastItem(
-        image = R.drawable.img_cloudy,
-        dayOfWeek = "Sun",
-        date = "19 Feb",
-        temperature = "24°",
-        airQuality = "15",
-        airQualityIndicatorColorHex = "#2dbe8d"
+/**
+ * Generate forecast data using real dates and randomized but realistic weather data
+ * In a real app, this would fetch from a forecast API
+ */
+val ForecastData = buildWeeklyForecast()
+
+private fun buildWeeklyForecast(): List<ForecastItem> {
+    val today = LocalDate.now()
+    val tomorrow = today.plusDays(1) // Start from tomorrow
+    val dateFormatter = DateTimeFormatter.ofPattern("dd MMM")
+    val items = mutableListOf<ForecastItem>()
+    
+    val currentTemp = 15 + Random.nextInt(10) // Base temperature between 15-25°C
+    val weatherTrend = Random.nextInt(-2, 3) // Temperature trend
+    
+    // Common weather icons
+    val weatherIcons = listOf(
+        R.drawable.img_cloudy,
+        R.drawable.ic_cloudy,
+        R.drawable.ic_clear_day,
+        R.drawable.ic_rainy
     )
-) 
+    
+    // Create 7 days of forecast starting from tomorrow
+    for (i in 0 until 7) {
+        val date = tomorrow.plusDays(i.toLong())
+        val dayTemp = (currentTemp + (i * weatherTrend) + Random.nextInt(-3, 4)).coerceIn(5, 35)
+        
+        // Air quality index (0-300 scale)
+        val airQualityValue = Random.nextInt(20, 200)
+        val airQualityColor = when {
+            airQualityValue < 50 -> "#2dbe8d" // Good
+            airQualityValue < 100 -> "#f9cf5f" // Moderate
+            airQualityValue < 150 -> "#ef974b" // Unhealthy for sensitive groups
+            else -> "#ff7676" // Unhealthy
+        }
+        
+        items.add(
+            ForecastItem(
+                image = weatherIcons[Random.nextInt(weatherIcons.size)],
+                dayOfWeek = date.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault()),
+                date = date.format(dateFormatter),
+                temperature = "${dayTemp}°",
+                airQuality = airQualityValue.toString(),
+                airQualityIndicatorColorHex = airQualityColor,
+                isSelected = i == 0 // Make first day (tomorrow) selected by default
+            )
+        )
+    }
+    
+    return items
+} 

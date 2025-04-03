@@ -44,13 +44,38 @@ class WeatherRepositoryImpl @Inject constructor(
             getReverseGeocodedCityName(lat, lng) ?: "Unknown location"
         }
 
+        // Calculate UV Index based on cloudiness and conditions
+        // This is an estimation since the free API doesn't provide UV Index
+        val calculatedUvIndex = calculateApproximateUvIndex(
+            clouds = response.clouds?.all ?: 0,
+            weatherId = weather.id, 
+            isDay = weather.icon.last() == 'd'
+        )
+        
+        // Calculate rain probability based on humidity, clouds and weather condition
+        // This is an estimation since the free API doesn't provide precipitation probability
+        val calculatedRainProbability = calculateApproximateRainProbability(
+            humidity = response.main.humidity,
+            clouds = response.clouds?.all ?: 0,
+            weatherId = weather.id
+        )
+        
         val weatherInfo = WeatherInfo(
             locationName = locationName,
             conditionIcon = weather.icon,
             condition = weather.main,
             temperature = response.main.temp.roundToInt(),
             dayOfWeek = LocalDate.now().dayOfWeek.getDisplayName(TextStyle.FULL, Locale.getDefault()),
-            isDay = weather.icon.last() == 'd'
+            isDay = weather.icon.last() == 'd',
+            // Additional data
+            humidity = response.main.humidity,
+            windSpeed = response.wind?.speed ?: 0.0,
+            pressure = response.main.pressure,
+            visibility = response.visibility ?: 10000,
+            feelsLike = response.main.feelsLike,
+            clouds = response.clouds?.all ?: 0,
+            rainProbability = calculatedRainProbability,
+            uvIndex = calculatedUvIndex
         )
         
         Log.d(TAG, "Created WeatherInfo: $weatherInfo")
@@ -86,5 +111,68 @@ class WeatherRepositoryImpl @Inject constructor(
             Log.e(TAG, "Error in repository geocoding", e)
             null
         }
+    }
+    
+    // Estimate UV Index based on cloudiness and weather condition
+    // Real UV data requires a different API endpoint or subscription
+    private fun calculateApproximateUvIndex(clouds: Int, weatherId: Int, isDay: Boolean): Int {
+        if (!isDay) return 0 // No UV at night
+        
+        // Base value between 0-11 based on cloudiness
+        val baseValue = (11 * (100 - clouds) / 100.0).toInt()
+        
+        // Adjust based on weather condition
+        return when {
+            // Clear sky conditions
+            weatherId in 800..801 -> baseValue.coerceAtMost(11)
+            // Partly cloudy
+            weatherId in 802..803 -> (baseValue * 0.7).toInt().coerceAtMost(8)
+            // Cloudy conditions
+            weatherId == 804 -> (baseValue * 0.5).toInt().coerceAtMost(6)
+            // Atmosphere conditions (fog, mist, etc.)
+            weatherId in 700..799 -> (baseValue * 0.4).toInt().coerceAtMost(4)
+            // Rain or drizzle
+            weatherId in 300..599 -> (baseValue * 0.3).toInt().coerceAtMost(3)
+            // Snow
+            weatherId in 600..699 -> (baseValue * 0.6).toInt().coerceAtMost(5)
+            // Thunderstorm
+            weatherId in 200..299 -> (baseValue * 0.2).toInt().coerceAtMost(2)
+            // Default
+            else -> baseValue.coerceAtMost(5)
+        }
+    }
+    
+    // Estimate rain probability based on humidity, clouds and weather condition
+    private fun calculateApproximateRainProbability(humidity: Int, clouds: Int, weatherId: Int): Int {
+        // Base probability from humidity and cloudiness
+        val baseProbability = (humidity * 0.5 + clouds * 0.5) / 100.0
+        
+        // Adjust based on weather condition
+        val weatherFactor = when {
+            // Clear sky
+            weatherId == 800 -> 0.1
+            // Few clouds
+            weatherId == 801 -> 0.2
+            // Scattered clouds
+            weatherId == 802 -> 0.3
+            // Broken clouds
+            weatherId == 803 -> 0.4
+            // Overcast clouds
+            weatherId == 804 -> 0.5
+            // Atmosphere conditions (fog, mist, etc.)
+            weatherId in 700..799 -> 0.6
+            // Drizzle or light rain
+            weatherId in 300..399 -> 0.8
+            // Rain
+            weatherId in 500..599 -> 0.9
+            // Thunderstorm
+            weatherId in 200..299 -> 0.95
+            // Snow
+            weatherId in 600..699 -> 0.7
+            // Default
+            else -> 0.4
+        }
+        
+        return (baseProbability * weatherFactor * 100).toInt().coerceIn(0, 100)
     }
 }

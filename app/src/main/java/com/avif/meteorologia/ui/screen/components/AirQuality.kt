@@ -27,6 +27,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.avif.meteorologia.R
+import com.avif.meteorologia.data.model.WeatherInfo
 import com.avif.meteorologia.ui.screen.util.fromHex
 import com.avif.meteorologia.ui.theme.CardGradient1
 import com.avif.meteorologia.ui.theme.CardGradient2
@@ -36,12 +37,33 @@ import com.avif.meteorologia.ui.theme.ColorTextSecondary
 
 @Composable
 fun AirQuality(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    weatherInfo: WeatherInfo? = null
 ) {
     // Create a gradient brush for the card background
     val cardGradientBrush = Brush.verticalGradient(
         colors = listOf(CardGradient1, CardGradient2, CardGradient3)
     )
+    
+    // Determine air quality rating based on available data
+    // Since we don't have direct air quality data from OpenWeatherMap's free API,
+    // we'll estimate based on visibility, cloudiness, and humidity
+    val airQualityRating = when {
+        weatherInfo == null -> "Unknown"
+        weatherInfo.visibility >= 9000 && weatherInfo.clouds < 30 -> "Good"
+        weatherInfo.visibility >= 6000 && weatherInfo.clouds < 60 -> "Moderate"
+        weatherInfo.clouds > 80 || weatherInfo.visibility < 3000 -> "Poor"
+        else -> "Fair"
+    }
+    
+    // Set color based on rating
+    val airQualityColor = when(airQualityRating) {
+        "Good" -> Color.fromHex("#2dbe8d")
+        "Moderate" -> Color.fromHex("#f9cf5f")
+        "Fair" -> Color.fromHex("#ef974b")
+        "Poor" -> Color.fromHex("#ff7676")
+        else -> Color.Gray
+    }
     
     Surface(
         modifier = modifier.fillMaxWidth(),
@@ -82,10 +104,10 @@ fun AirQuality(
                             modifier = Modifier
                                 .size(10.dp)
                                 .clip(CircleShape)
-                                .background(Color.fromHex("#2dbe8d"))
+                                .background(airQualityColor)
                         )
                         Text(
-                            text = "Good",
+                            text = airQualityRating,
                             style = MaterialTheme.typography.bodySmall,
                             color = ColorTextSecondary
                         )
@@ -99,24 +121,24 @@ fun AirQuality(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     AirQualityItem(
-                        title = "SO₂",
-                        value = "25",
-                        iconRes = R.drawable.ic_thunderstorm
+                        title = "Humidity",
+                        value = if (weatherInfo != null) "${weatherInfo.humidity}%" else "0%",
+                        iconRes = R.drawable.ic_rainy
                     )
                     AirQualityItem(
-                        title = "NO₂",
-                        value = "15",
-                        iconRes = R.drawable.ic_clear_day
-                    )
-                    AirQualityItem(
-                        title = "O₃",
-                        value = "40",
+                        title = "Visibility",
+                        value = if (weatherInfo != null) "${weatherInfo.visibility / 1000} km" else "0 km",
                         iconRes = R.drawable.ic_foggy
                     )
                     AirQualityItem(
-                        title = "PM10",
-                        value = "32",
+                        title = "Pressure",
+                        value = if (weatherInfo != null) "${weatherInfo.pressure} hPa" else "0 hPa",
                         iconRes = R.drawable.ic_cloudy
+                    )
+                    AirQualityItem(
+                        title = "Feels Like",
+                        value = if (weatherInfo != null) "${weatherInfo.feelsLike.toInt()}°" else "0°",
+                        iconRes = R.drawable.ic_clear_day
                     )
                 }
             }
