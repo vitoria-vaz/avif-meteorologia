@@ -44,22 +44,21 @@ fun WeeklyForecast(
     modifier: Modifier = Modifier,
     forecastData: List<ForecastItem> = ForecastData // Use API data if provided, otherwise fall back to static data
 ) {
-    // Create a gradient brush for the card background
-    val cardGradientBrush = Brush.verticalGradient(
-        colors = listOf(CardGradient1, CardGradient2, CardGradient3)
-    )
+    // Set solid white color with 75% opacity
+    val backgroundColor = Color.White.copy(alpha = 0.75f)
+    val textColor = Color.Black
     
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
-        color = Color.Transparent // Set to transparent to allow gradient background
+        color = Color.Transparent // Set to transparent to allow custom background
     ) {
-        // Apply gradient background with a Box
+        // Apply solid white background with a Box
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(24.dp))
-                .background(cardGradientBrush)
+                .background(backgroundColor)
         ) {
             Column(
                 modifier = Modifier
@@ -70,7 +69,7 @@ fun WeeklyForecast(
                 Text(
                     text = "Weekly Forecast",
                     style = MaterialTheme.typography.titleMedium,
-                    color = ColorText,
+                    color = textColor,
                     fontWeight = FontWeight.Bold
                 )
                 
@@ -80,7 +79,7 @@ fun WeeklyForecast(
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     items(forecastData) { item ->
-                        ForecastItemView(item = item)
+                        ForecastItemView(item = item, textColor = textColor)
                     }
                 }
             }
@@ -90,7 +89,8 @@ fun WeeklyForecast(
 
 @Composable
 private fun ForecastItemView(
-    item: ForecastItem
+    item: ForecastItem,
+    textColor: Color
 ) {
     Column(
         modifier = Modifier.padding(4.dp),
@@ -103,14 +103,14 @@ private fun ForecastItemView(
             Text(
                 text = item.dayOfWeek,
                 style = MaterialTheme.typography.bodyMedium,
-                color = ColorText,
+                color = textColor,
                 fontWeight = FontWeight.Medium
             )
             
             Text(
                 text = item.date,
                 style = MaterialTheme.typography.bodySmall,
-                color = ColorTextSecondary
+                color = textColor.copy(alpha = 0.7f)
             )
         }
         
@@ -133,7 +133,7 @@ private fun ForecastItemView(
             Text(
                 text = item.maxTemperature,
                 style = MaterialTheme.typography.bodyLarge,
-                color = ColorText,
+                color = textColor,
                 fontWeight = FontWeight.Bold
             )
             
@@ -142,7 +142,7 @@ private fun ForecastItemView(
             Text(
                 text = item.minTemperature,
                 style = MaterialTheme.typography.bodyMedium,
-                color = ColorTextSecondary
+                color = textColor.copy(alpha = 0.7f)
             )
         }
     }

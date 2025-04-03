@@ -44,29 +44,28 @@ fun DailyForecast(
     modifier: Modifier = Modifier,
     weatherInfo: WeatherInfo? = null
 ) {
-    // Create a gradient brush for the card background
-    val cardGradientBrush = Brush.verticalGradient(
-        colors = listOf(CardGradient1, CardGradient2, CardGradient3)
-    )
+    // Set solid white color with 75% opacity
+    val backgroundColor = Color.White.copy(alpha = 0.75f)
+    val textColor = Color.Black
     
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
-        color = Color.Transparent // Set to transparent to allow gradient background
+        color = Color.Transparent // Set to transparent to allow custom background
     ) {
-        // Apply gradient background with a Box
+        // Apply solid white background with a Box
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(24.dp))
-                .background(cardGradientBrush)
+                .background(backgroundColor)
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(24.dp)
             ) {
-                WeatherStatus(weatherInfo = weatherInfo)
+                WeatherStatus(weatherInfo = weatherInfo, textColor = textColor)
                 
                 Spacer(modifier = Modifier.height(16.dp))
                 
@@ -77,12 +76,14 @@ fun DailyForecast(
                     WeatherDetail(
                         iconRes = R.drawable.ic_thunderstorm,
                         title = "UV Index",
-                        value = if (weatherInfo != null) "${weatherInfo.uvIndex}" else "0"
+                        value = if (weatherInfo != null) "${weatherInfo.uvIndex}" else "0",
+                        textColor = textColor
                     )
                     WeatherDetail(
                         iconRes = R.drawable.ic_rainy,
                         title = "Rain Chance",
-                        value = if (weatherInfo != null) "${weatherInfo.rainProbability}%" else "0%"
+                        value = if (weatherInfo != null) "${weatherInfo.rainProbability}%" else "0%",
+                        textColor = textColor
                     )
                     WeatherDetail(
                         iconRes = R.drawable.ic_cloudy,
@@ -91,7 +92,8 @@ fun DailyForecast(
                             // Convert m/s to km/h (1 m/s = 3.6 km/h)
                             val windKmh = (weatherInfo.windSpeed * 3.6).toInt()
                             "$windKmh km/h"
-                        } else "0 km/h"
+                        } else "0 km/h",
+                        textColor = textColor
                     )
                 }
             }
@@ -101,7 +103,8 @@ fun DailyForecast(
 
 @Composable
 private fun WeatherStatus(
-    weatherInfo: WeatherInfo?
+    weatherInfo: WeatherInfo?,
+    textColor: Color
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -112,7 +115,7 @@ private fun WeatherStatus(
             Text(
                 text = weatherInfo?.dayOfWeek ?: "Today",
                 style = MaterialTheme.typography.bodyLarge,
-                color = ColorTextSecondary
+                color = textColor.copy(alpha = 0.7f)
             )
             
             Spacer(modifier = Modifier.height(4.dp))
@@ -121,14 +124,14 @@ private fun WeatherStatus(
                 Text(
                     text = "${weatherInfo?.temperature ?: 18}",
                     style = MaterialTheme.typography.displayLarge,
-                    color = ColorText,
+                    color = textColor,
                     fontWeight = FontWeight.Bold
                 )
                 
                 Text(
                     text = "°C",
                     style = MaterialTheme.typography.headlineSmall,
-                    color = ColorTextSecondary,
+                    color = textColor.copy(alpha = 0.7f),
                     fontWeight = FontWeight.Normal,
                     modifier = Modifier.padding(top = 12.dp)
                 )
@@ -139,7 +142,7 @@ private fun WeatherStatus(
             Text(
                 text = weatherInfo?.condition ?: "Cloudy",
                 style = MaterialTheme.typography.bodyMedium,
-                color = ColorTextSecondary
+                color = textColor.copy(alpha = 0.7f)
             )
         }
         
@@ -182,7 +185,8 @@ private fun WeatherStatus(
 private fun WeatherDetail(
     @androidx.annotation.DrawableRes iconRes: Int,
     title: String,
-    value: String
+    value: String,
+    textColor: Color
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally
@@ -191,7 +195,7 @@ private fun WeatherDetail(
             modifier = Modifier
                 .size(48.dp)
                 .background(
-                    color = ColorBlue.copy(alpha = 0.2f),
+                    color = Color.White.copy(alpha = 0.8f),
                     shape = RoundedCornerShape(16.dp)
                 ),
             contentAlignment = Alignment.Center
@@ -199,7 +203,7 @@ private fun WeatherDetail(
             Icon(
                 painter = painterResource(id = iconRes),
                 contentDescription = null,
-                tint = ColorIconTint,
+                tint = textColor.copy(alpha = 0.8f),
                 modifier = Modifier.size(20.dp)
             )
         }
@@ -209,7 +213,7 @@ private fun WeatherDetail(
         Text(
             text = title,
             style = MaterialTheme.typography.bodySmall,
-            color = ColorTextSecondary,
+            color = textColor.copy(alpha = 0.7f),
             textAlign = TextAlign.Center
         )
         
@@ -218,7 +222,7 @@ private fun WeatherDetail(
         Text(
             text = value,
             style = MaterialTheme.typography.bodyLarge,
-            color = ColorText,
+            color = textColor,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center
         )

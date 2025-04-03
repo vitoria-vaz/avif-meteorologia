@@ -40,10 +40,9 @@ fun AirQuality(
     modifier: Modifier = Modifier,
     weatherInfo: WeatherInfo? = null
 ) {
-    // Create a gradient brush for the card background
-    val cardGradientBrush = Brush.verticalGradient(
-        colors = listOf(CardGradient1, CardGradient2, CardGradient3)
-    )
+    // Set solid white color with 75% opacity
+    val backgroundColor = Color.White.copy(alpha = 0.75f)
+    val textColor = Color.Black
     
     // Determine air quality rating based on available data
     // Since we don't have direct air quality data from OpenWeatherMap's free API,
@@ -68,14 +67,14 @@ fun AirQuality(
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
-        color = Color.Transparent // Set to transparent to allow gradient background
+        color = Color.Transparent // Set to transparent to allow custom background
     ) {
-        // Apply gradient background with a Box
+        // Apply solid white background with a Box
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(24.dp))
-                .background(cardGradientBrush)
+                .background(backgroundColor)
         ) {
             Column(
                 modifier = Modifier
@@ -91,7 +90,7 @@ fun AirQuality(
                     Text(
                         text = "Air Quality",
                         style = MaterialTheme.typography.titleMedium,
-                        color = ColorText,
+                        color = textColor,
                         fontWeight = FontWeight.Bold
                     )
                     
@@ -109,7 +108,7 @@ fun AirQuality(
                         Text(
                             text = airQualityRating,
                             style = MaterialTheme.typography.bodySmall,
-                            color = ColorTextSecondary
+                            color = textColor.copy(alpha = 0.7f)
                         )
                     }
                 }
@@ -166,7 +165,7 @@ private fun AirQualityItem(
                     offsetY = 4.dp
                 )
                 .background(
-                    color = CardGradient2.copy(alpha = 0.7f),
+                    color = Color.White.copy(alpha = 0.8f),
                     shape = RoundedCornerShape(16.dp)
                 ),
             contentAlignment = Alignment.Center
@@ -183,7 +182,7 @@ private fun AirQualityItem(
         Text(
             text = title,
             style = MaterialTheme.typography.bodySmall,
-            color = ColorTextSecondary
+            color = Color.Black.copy(alpha = 0.7f)
         )
         
         Spacer(modifier = Modifier.height(4.dp))
@@ -191,7 +190,7 @@ private fun AirQualityItem(
         Text(
             text = value,
             style = MaterialTheme.typography.bodyLarge,
-            color = ColorText,
+            color = Color.Black,
             fontWeight = FontWeight.Bold
         )
     }
