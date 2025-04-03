@@ -64,7 +64,7 @@ fun CustomPullToRefresh(
                 if (isRefreshing) return Offset.Zero
 
                 // If user is scrolling down and we're at the top, handle the drag
-                if (available.y < 0 && source == NestedScrollSource.Drag) {
+                if (available.y < 0 && source == NestedScrollSource.UserInput) {
                     val newOffset = (offsetY + available.y).coerceAtLeast(0f)
                     val consumed = offsetY - newOffset
                     offsetY = newOffset
@@ -82,7 +82,7 @@ fun CustomPullToRefresh(
                 if (isRefreshing) return Offset.Zero
 
                 // If user is scrolling down and not all scroll consumed, handle the drag
-                if (available.y > 0 && source == NestedScrollSource.Drag) {
+                if (available.y > 0 && source == NestedScrollSource.UserInput) {
                     // Apply resistance as we pull down
                     val newOffset = offsetY + available.y * 0.5f
                     offsetY = newOffset
