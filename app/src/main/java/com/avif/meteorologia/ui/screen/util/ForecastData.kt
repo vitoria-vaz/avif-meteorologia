@@ -12,9 +12,8 @@ data class ForecastItem(
     @DrawableRes val image: Int,
     val dayOfWeek: String,
     val date: String,
-    val temperature: String,
-    val airQuality: String,
-    val airQualityIndicatorColorHex: String,
+    val minTemperature: String,
+    val maxTemperature: String,
     val isSelected: Boolean = false
 )
 
@@ -44,25 +43,16 @@ private fun buildWeeklyForecast(): List<ForecastItem> {
     // Create 7 days of forecast starting from tomorrow
     for (i in 0 until 7) {
         val date = tomorrow.plusDays(i.toLong())
-        val dayTemp = (currentTemp + (i * weatherTrend) + Random.nextInt(-3, 4)).coerceIn(5, 35)
-        
-        // Air quality index (0-300 scale)
-        val airQualityValue = Random.nextInt(20, 200)
-        val airQualityColor = when {
-            airQualityValue < 50 -> "#2dbe8d" // Good
-            airQualityValue < 100 -> "#f9cf5f" // Moderate
-            airQualityValue < 150 -> "#ef974b" // Unhealthy for sensitive groups
-            else -> "#ff7676" // Unhealthy
-        }
+        val maxTemp = (currentTemp + (i * weatherTrend) + Random.nextInt(-2, 5)).coerceIn(8, 38)
+        val minTemp = (maxTemp - Random.nextInt(3, 8)).coerceIn(2, 30) // Min temp is 3-8 degrees lower
         
         items.add(
             ForecastItem(
                 image = weatherIcons[Random.nextInt(weatherIcons.size)],
                 dayOfWeek = date.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault()),
                 date = date.format(dateFormatter),
-                temperature = "${dayTemp}°",
-                airQuality = airQualityValue.toString(),
-                airQualityIndicatorColorHex = airQualityColor,
+                minTemperature = "${minTemp}°",
+                maxTemperature = "${maxTemp}°",
                 isSelected = i == 0 // Make first day (tomorrow) selected by default
             )
         )

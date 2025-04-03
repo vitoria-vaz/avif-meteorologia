@@ -125,34 +125,23 @@ private fun ForecastItemView(
         
         Spacer(modifier = Modifier.height(12.dp))
         
-        // Temperature
-        Text(
-            text = item.temperature,
-            style = MaterialTheme.typography.bodyLarge,
-            color = ColorText,
-            fontWeight = FontWeight.Bold
-        )
-        
-        Spacer(modifier = Modifier.height(12.dp))
-        
-        // Air quality
-        Row(
-            verticalAlignment = Alignment.CenterVertically
+        // Temperature (min/max)
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Box(
-                modifier = Modifier
-                    .size(6.dp)
-                    .clip(CircleShape)
-                    .background(Color.fromHex(item.airQualityIndicatorColorHex))
+            Text(
+                text = item.maxTemperature,
+                style = MaterialTheme.typography.bodyLarge,
+                color = ColorText,
+                fontWeight = FontWeight.Bold
             )
             
-            Spacer(modifier = Modifier.width(4.dp))
+            Spacer(modifier = Modifier.height(4.dp))
             
             Text(
-                text = item.airQuality,
-                style = MaterialTheme.typography.bodySmall,
-                color = ColorTextSecondary,
-                textAlign = TextAlign.Center
+                text = item.minTemperature,
+                style = MaterialTheme.typography.bodyMedium,
+                color = ColorTextSecondary
             )
         }
     }
